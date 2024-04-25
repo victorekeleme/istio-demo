@@ -1,0 +1,101 @@
+##################################################################################################
+# Productpage services
+##################################################################################################
+apiVersion: v1 
+kind: ServiceAccount
+metadata:
+  name: bookinfo-productpage
+  labels:
+    account: productpage
+  namespace: productpage              # Add namespace details
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: productpage-blue
+  labels:
+    app: productpage
+    color: blue 
+  namespace: productpage              # Add namespace details
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: productpage
+      color: blue 
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9080"
+        prometheus.io/path: "/metrics"
+      labels:
+        app: productpage
+        color: blue 
+    spec:
+      serviceAccountName: bookinfo-productpage
+      containers:
+      - name: productpage
+        image: docker.io/istio/examples-bookinfo-productpage-v1:1.19.1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9080
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        env:
+        - name: DETAILS_HOSTNAME
+          value: "details.details.svc.cluster.local"   # FQDN for the details service
+        - name: REVIEWS_HOSTNAME
+          value: "reviews.reviews.svc.cluster.local"   # FQDN for the reviews service
+        # - name: RATINGS_HOSTNAME
+        #   value: "ratings.ratings.svc.cluster.local"
+      volumes:
+      - name: tmp
+        emptyDir: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: productpage-green
+  labels:
+    app: productpage
+    color: green 
+  namespace: productpage              # Add namespace details
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: productpage
+      color: green 
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9080"
+        prometheus.io/path: "/metrics"
+      labels:
+        app: productpage
+        color: green 
+    spec:
+      serviceAccountName: bookinfo-productpage
+      containers:
+      - name: productpage
+        image: docker.io/sixeyed/bookinfo-productpage:v2
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9080
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        env:
+        - name: DETAILS_HOSTNAME
+          value: "details.details.svc.cluster.local"   # FQDN for the details service
+        - name: REVIEWS_HOSTNAME
+          value: "reviews.reviews.svc.cluster.local"   # FQDN for the reviews service
+        # - name: RATINGS_HOSTNAME
+        #   value: "ratings.ratings.svc.cluster.local"
+      volumes:
+      - name: tmp
+        emptyDir: {}

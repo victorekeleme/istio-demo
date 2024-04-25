@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: reviews
+  labels:
+    app: reviews
+    service: reviews
+  namespace: reviews                  # Add namespace details
+spec:
+  ports:
+  - port: 9080
+    name: http
+  selector:
+    app: reviews
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: reviews-vs
+  namespace: reviews                  # Namespace where the reviews service resides
+spec:
+  hosts:
+  - reviews            # Replace with the FQDN for reviews service
+  http:
+  - match:
+    - headers:
+        name:
+          exact: test
+    route:
+      - destination:
+          host: reviews                # Service name within the same namespace
+          subset: green                  # Route traffic to version "v1"
+          port:
+            number: 9080
+  - route:
+    - destination:
+        host: reviews                # Service name within the same namespace
+        subset: blue                  # Route traffic to version "v1"
+        port:
+          number: 9080
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: reviews-dr
+  namespace: reviews                  # Namespace where the reviews service resides
+spec:
+  host: reviews                      # Service name within the same namespace
+  subsets:
+  - name: blue
+    labels:
+      app: reviews
+      color: blue
+  - name: green
+    labels:
+      app: reviews
+      color: green
+  trafficPolicy:
+    loadBalancer:
+      simple: ROUND_ROBIN
+
